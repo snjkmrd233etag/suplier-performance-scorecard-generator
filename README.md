@@ -1,7 +1,17 @@
-# Next.js + Contentlayer
+# CW SupplierScore
 
-A template with Next.js 13 app dir, Contentlayer, Tailwind CSS and dark mode.
+Single-page Supplier Performance Scorecard Generator built with Vite, React 18, TypeScript, Tailwind CSS, Recharts, and html2canvas.
 
-https://next-contentlayer.vercel.app
+## Run
 
+```bash
+npm install
+npm run dev
+```
 
+## Build
+
+```bash
+npm run build
+npm run preview
+```
