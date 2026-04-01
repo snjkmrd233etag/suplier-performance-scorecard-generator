@@ -864,37 +864,106 @@ export default function Home() {
 
       <section className="grid gap-4 lg:grid-cols-[1.4fr_1fr]">
         <div className="premium-card p-5">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <p className="text-sm font-semibold uppercase tracking-[0.22em] text-sky-700 dark:text-sky-300">
-                How To Use
+          <div className="grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
+            <div className="rounded-[26px] border border-slate-200/80 bg-[linear-gradient(135deg,rgba(255,255,255,0.96),rgba(241,245,249,0.86))] p-5 shadow-inner shadow-white/80 dark:border-slate-700 dark:bg-[linear-gradient(135deg,rgba(15,23,42,0.9),rgba(30,41,59,0.72))]">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-sky-700 dark:text-sky-300">
+                    Standardized Evaluation
+                  </p>
+                  <h2 className="mt-2 max-w-xl text-[28px] font-semibold leading-[1.05] tracking-tight text-slate-950 dark:text-white">
+                    One review surface for procurement, SQE, and supply chain.
+                  </h2>
+                </div>
+                <div className="rounded-2xl border border-sky-200/80 bg-sky-50/90 px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-sky-900 dark:border-sky-900/50 dark:bg-sky-950/40 dark:text-sky-100">
+                  Live recalculation
+                </div>
+              </div>
+              <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600 dark:text-slate-300">
+                Capture supplier performance once, apply a common weighting model, and walk into operational reviews with a scorecard that already looks presentation-ready.
               </p>
-              <h2 className="mt-2 text-2xl font-semibold text-slate-950 dark:text-white">
-                Fast standardized supplier evaluation
-              </h2>
+              <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                <div className="rounded-2xl border border-slate-200/80 bg-white/80 p-3.5 dark:border-slate-700 dark:bg-slate-900/55">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
+                    Input
+                  </p>
+                  <p className="mt-2 text-sm font-semibold text-slate-900 dark:text-white">7 normalized metrics</p>
+                  <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">
+                    OTD, quality, SCAR, lead time, cost, responsiveness, and documentation.
+                  </p>
+                </div>
+                <div className="rounded-2xl border border-slate-200/80 bg-white/80 p-3.5 dark:border-slate-700 dark:bg-slate-900/55">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
+                    Control
+                  </p>
+                  <p className="mt-2 text-sm font-semibold text-slate-900 dark:text-white">Locked 100% weighting</p>
+                  <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">
+                    Rebalance priorities instantly without losing scoring consistency.
+                  </p>
+                </div>
+                <div className="rounded-2xl border border-slate-200/80 bg-white/80 p-3.5 dark:border-slate-700 dark:bg-slate-900/55">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
+                    Output
+                  </p>
+                  <p className="mt-2 text-sm font-semibold text-slate-900 dark:text-white">Batch ranking + exports</p>
+                  <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">
+                    Use in supplier meetings, corrective action reviews, and sourcing decisions.
+                  </p>
+                </div>
+              </div>
             </div>
-            <div className="rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 text-xs font-medium text-sky-900 dark:border-sky-900/50 dark:bg-sky-950/40 dark:text-sky-100">
-              Recalculates instantly on every change
-            </div>
-          </div>
-          <div className="mt-4 grid gap-3 md:grid-cols-3">
-            <div className="rounded-2xl bg-slate-50 p-3.5 dark:bg-slate-800/60">
-              <p className="text-sm font-semibold text-slate-900 dark:text-white">1. Enter metrics</p>
-              <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">
-                Update the seven supplier inputs for a single supplier review.
-              </p>
-            </div>
-            <div className="rounded-2xl bg-slate-50 p-3.5 dark:bg-slate-800/60">
-              <p className="text-sm font-semibold text-slate-900 dark:text-white">2. Tune weights</p>
-              <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">
-                Business weights auto-balance to remain exactly 100%.
-              </p>
-            </div>
-            <div className="rounded-2xl bg-slate-50 p-3.5 dark:bg-slate-800/60">
-              <p className="text-sm font-semibold text-slate-900 dark:text-white">3. Share results</p>
-              <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">
-                Review the scorecard, process a batch CSV, or export the dashboard.
-              </p>
+            <div className="grid gap-3">
+              <div className="rounded-[24px] bg-slate-950 p-4 text-white shadow-xl shadow-slate-900/25 dark:bg-slate-900">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">
+                  Workflow
+                </p>
+                <div className="mt-3 space-y-3">
+                  <div className="flex gap-3">
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-2xl bg-white/10 text-sm font-semibold">
+                      1
+                    </span>
+                    <div>
+                      <p className="text-sm font-semibold">Enter supplier metrics</p>
+                      <p className="mt-1 text-xs leading-5 text-slate-300">
+                        Start with the current supplier or load a prior review from SQLite.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex gap-3">
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-2xl bg-white/10 text-sm font-semibold">
+                      2
+                    </span>
+                    <div>
+                      <p className="text-sm font-semibold">Adjust weighting emphasis</p>
+                      <p className="mt-1 text-xs leading-5 text-slate-300">
+                        Tune the model for division priorities while keeping the total at 100%.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex gap-3">
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-2xl bg-white/10 text-sm font-semibold">
+                      3
+                    </span>
+                    <div>
+                      <p className="text-sm font-semibold">Review radar and ranking</p>
+                      <p className="mt-1 text-xs leading-5 text-slate-300">
+                        Export the dashboard, compare suppliers in batch mode, or save the snapshot.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="rounded-[24px] border border-emerald-200/80 bg-emerald-50/80 p-4 dark:border-emerald-900/40 dark:bg-emerald-950/25">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-700 dark:text-emerald-300">
+                  Review Benefit
+                </p>
+                <p className="mt-2 text-sm font-semibold text-slate-900 dark:text-white">
+                  Eliminates spreadsheet drift between teams.
+                </p>
+                <p className="mt-1 text-xs leading-5 text-slate-600 dark:text-slate-300">
+                  Everyone sees the same normalized methodology, the same rating bands, and the same weakest-area callout.
+                </p>
+              </div>
             </div>
           </div>
         </div>
