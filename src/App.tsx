@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import html2canvas from "html2canvas"
 import {
   PolarAngleAxis,
@@ -54,6 +54,28 @@ type BatchResult = {
   compositeScore: number
   rating: RatingBand
   normalizedScores: Record<MetricKey, number>
+}
+
+type ThemePreset = {
+  id: string
+  name: string
+  description: string
+  heroBackground: string
+  heroRing: string
+  accentButton: string
+  accentText: string
+}
+
+type SavedSnapshot = {
+  id: number
+  supplierName: string
+  compositeScore: number
+  ratingLabel: string
+  createdAt: string
+  payload: {
+    supplier: SupplierInput
+    weights: Weights
+  }
 }
 
 const defaultSupplier: SupplierInput = {
@@ -166,6 +188,39 @@ const metricHeaderMap: Record<string, MetricKey | "supplierName"> = {
   "responsiveness score (1-5)": "responsiveness",
   "documentation compliance %": "documentationCompliance",
 }
+
+const themePresets: ThemePreset[] = [
+  {
+    id: "cw-command",
+    name: "CW Command",
+    description: "Blue-gray executive dashboard with a defense-program review tone.",
+    heroBackground:
+      "radial-gradient(circle at top left, rgba(59,130,246,0.18), transparent 35%), linear-gradient(135deg, rgba(15,23,42,0.98), rgba(30,41,59,0.93))",
+    heroRing: "border-slate-200/70 dark:border-slate-700/70",
+    accentButton: "bg-sky-600 hover:bg-sky-700",
+    accentText: "text-sky-700",
+  },
+  {
+    id: "factory-ops",
+    name: "Factory Ops",
+    description: "Steel, teal, and graphite styling for plant-floor supply reviews.",
+    heroBackground:
+      "radial-gradient(circle at top left, rgba(20,184,166,0.22), transparent 38%), linear-gradient(135deg, rgba(8,47,73,0.98), rgba(17,94,89,0.9))",
+    heroRing: "border-cyan-200/60 dark:border-cyan-700/60",
+    accentButton: "bg-teal-600 hover:bg-teal-700",
+    accentText: "text-teal-700",
+  },
+  {
+    id: "risk-watch",
+    name: "Risk Watch",
+    description: "Warmer review theme for escalation, risk meetings, and recovery plans.",
+    heroBackground:
+      "radial-gradient(circle at top left, rgba(251,146,60,0.20), transparent 38%), linear-gradient(135deg, rgba(69,26,3,0.98), rgba(120,53,15,0.92))",
+    heroRing: "border-amber-200/60 dark:border-amber-700/60",
+    accentButton: "bg-amber-600 hover:bg-amber-700",
+    accentText: "text-amber-700",
+  },
+]
 
 function clamp(value: number, min = 0, max = 100) {
   return Math.min(max, Math.max(min, value))
@@ -436,6 +491,10 @@ function buildBalancedWeights(current: Weights, key: MetricKey, nextValue: numbe
   return roundedWeights
 }
 
+function formatSnapshotDate(value: string) {
+  return new Date(value).toLocaleString()
+}
+
 export default function Home() {
   const dashboardRef = useRef<HTMLElement>(null)
   const [supplier, setSupplier] = useState<SupplierInput>(defaultSupplier)
@@ -452,6 +511,10 @@ export default function Home() {
   const [batchError, setBatchError] = useState("")
   const [sortDirection, setSortDirection] = useState<"desc" | "asc">("desc")
   const [apiKey, setApiKey] = useState("")
+  const [selectedThemeId, setSelectedThemeId] = useState("cw-command")
+  const [savedSnapshots, setSavedSnapshots] = useState<SavedSnapshot[]>([])
+  const [serverStatus, setServerStatus] = useState<"checking" | "online" | "offline">("checking")
+  const [saveMessage, setSaveMessage] = useState("")
 
   const normalizedScores = useMemo(() => getNormalizedScores(supplier), [supplier])
   const compositeScore = useMemo(
@@ -490,6 +553,38 @@ export default function Home() {
     )
   }, [batchResults, sortDirection])
 
+  const selectedTheme = useMemo(
+    () => themePresets.find((theme) => theme.id === selectedThemeId) ?? themePresets[0],
+    [selectedThemeId]
+  )
+
+  useEffect(() => {
+    async function loadServerData() {
+      try {
+        const [healthResponse, snapshotsResponse, themeResponse] = await Promise.all([
+          fetch("/api/health"),
+          fetch("/api/snapshots"),
+          fetch("/api/theme"),
+        ])
+
+        if (!healthResponse.ok || !snapshotsResponse.ok || !themeResponse.ok) {
+          throw new Error("Local SQLite server is unavailable.")
+        }
+
+        const snapshots = (await snapshotsResponse.json()) as SavedSnapshot[]
+        const theme = (await themeResponse.json()) as { themeId: string }
+
+        setSavedSnapshots(snapshots)
+        setSelectedThemeId(theme.themeId)
+        setServerStatus("online")
+      } catch {
+        setServerStatus("offline")
+      }
+    }
+
+    void loadServerData()
+  }, [])
+
   function handleMetricChange(metric: MetricKey, rawValue: string) {
     const numericValue = Number(rawValue)
     setSupplier((current) => ({
@@ -501,6 +596,76 @@ export default function Home() {
   function handleWeightChange(metric: MetricKey, rawValue: string) {
     const numericValue = Number(rawValue)
     setWeights((current) => buildBalancedWeights(current, metric, Number.isNaN(numericValue) ? 0 : numericValue))
+  }
+
+  async function saveCurrentSnapshot() {
+    try {
+      const response = await fetch("/api/snapshots", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          supplierName: supplier.supplierName,
+          compositeScore,
+          ratingLabel: ratingBand.label,
+          payload: {
+            supplier,
+            weights,
+          },
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error("Snapshot save failed.")
+      }
+
+      const snapshotsResponse = await fetch("/api/snapshots")
+      const snapshots = (await snapshotsResponse.json()) as SavedSnapshot[]
+      setSavedSnapshots(snapshots)
+      setServerStatus("online")
+      setSaveMessage("Snapshot saved to SQLite.")
+    } catch {
+      setServerStatus("offline")
+      setSaveMessage("SQLite server is unavailable. Start `npm run dev:server`.")
+    }
+  }
+
+  async function deleteSnapshot(id: number) {
+    try {
+      await fetch(`/api/snapshots/${id}`, { method: "DELETE" })
+      setSavedSnapshots((current) => current.filter((item) => item.id !== id))
+    } catch {
+      setSaveMessage("Could not delete snapshot.")
+    }
+  }
+
+  function loadSnapshot(snapshot: SavedSnapshot) {
+    setSupplier(snapshot.payload.supplier)
+    setWeights(snapshot.payload.weights)
+    setSaveMessage(`Loaded snapshot for ${snapshot.supplierName}.`)
+  }
+
+  async function selectTheme(themeId: string) {
+    setSelectedThemeId(themeId)
+
+    try {
+      const response = await fetch("/api/theme", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ themeId }),
+      })
+
+      if (!response.ok) {
+        throw new Error("Theme save failed.")
+      }
+
+      setServerStatus("online")
+    } catch {
+      setServerStatus("offline")
+    }
   }
 
   function processBatch() {
@@ -585,8 +750,11 @@ export default function Home() {
   }
 
   return (
-    <div className="space-y-8 pb-10">
-      <section className="overflow-hidden rounded-[28px] border border-slate-200/70 bg-[radial-gradient(circle_at_top_left,_rgba(59,130,246,0.16),_transparent_35%),linear-gradient(135deg,_rgba(15,23,42,0.98),_rgba(30,41,59,0.93))] px-6 py-8 text-white shadow-2xl shadow-slate-900/10 dark:border-slate-700/70 sm:px-8">
+    <div className="mx-auto max-w-[1440px] space-y-8 px-4 py-8 pb-10 sm:px-6 lg:px-8">
+      <section
+        className={`overflow-hidden rounded-[28px] border px-6 py-8 text-white shadow-2xl shadow-slate-900/10 sm:px-8 ${selectedTheme.heroRing}`}
+        style={{ backgroundImage: selectedTheme.heroBackground }}
+      >
         <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-3xl space-y-4">
             <span className="inline-flex items-center rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-sky-100">
@@ -617,8 +785,14 @@ export default function Home() {
               <p className="mt-1 text-lg font-semibold">Radar Profile</p>
             </div>
             <div className="rounded-2xl border border-white/10 bg-white/10 p-4 backdrop-blur">
-              <p className="text-slate-300">Exports</p>
-              <p className="mt-1 text-lg font-semibold">CSV + PNG</p>
+              <p className="text-slate-300">SQLite</p>
+              <p className="mt-1 text-lg font-semibold">
+                {serverStatus === "online"
+                  ? "Local Sync On"
+                  : serverStatus === "offline"
+                    ? "Server Offline"
+                    : "Checking"}
+              </p>
             </div>
           </div>
         </div>
@@ -663,33 +837,51 @@ export default function Home() {
 
         <div className="rounded-3xl border border-slate-200 bg-white/90 p-6 shadow-sm shadow-slate-200/70 dark:border-slate-800 dark:bg-slate-900/90 dark:shadow-slate-950/30">
           <p className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-500 dark:text-slate-400">
-            AI Summary
+            Themes And Local Save
           </p>
           <h2 className="mt-2 text-2xl font-semibold text-slate-950 dark:text-white">
-            Placeholder integration
+            Presentation presets
           </h2>
+          <div className="mt-5 space-y-3">
+            {themePresets.map((theme) => (
+              <button
+                key={theme.id}
+                type="button"
+                onClick={() => void selectTheme(theme.id)}
+                className={`w-full rounded-2xl border p-4 text-left transition ${
+                  selectedThemeId === theme.id
+                    ? "border-slate-900 bg-slate-950 text-white"
+                    : "border-slate-200 bg-slate-50 text-slate-900 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800/60 dark:text-white"
+                }`}
+              >
+                <div
+                  className="mb-3 h-12 rounded-xl"
+                  style={{ backgroundImage: theme.heroBackground }}
+                />
+                <p className="text-sm font-semibold">{theme.name}</p>
+                <p className="mt-1 text-xs leading-5 opacity-80">{theme.description}</p>
+              </button>
+            ))}
+          </div>
+          <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-800/50">
+            <p className="text-sm font-semibold text-slate-900 dark:text-white">Local SQLite server</p>
+            <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">
+              Status: <span className="font-semibold">{serverStatus}</span>. Run <code>npm run dev:full</code> for the Vite app and SQLite API together.
+            </p>
+            {saveMessage ? (
+              <p className="mt-2 text-sm text-slate-700 dark:text-slate-200">{saveMessage}</p>
+            ) : null}
+          </div>
           <label className="mt-5 block text-sm font-medium text-slate-700 dark:text-slate-300">
             Claude API Key
             <input
               type="password"
               value={apiKey}
               onChange={(event) => setApiKey(event.target.value)}
-              placeholder="Enter API key for future integration"
+              placeholder="Optional future integration"
               className="mt-2 w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-sky-500 focus:ring-4 focus:ring-sky-500/10 dark:border-slate-700 dark:bg-slate-950 dark:text-white"
             />
           </label>
-          <button
-            type="button"
-            disabled
-            aria-disabled="true"
-            className="mt-4 w-full rounded-2xl bg-slate-200 px-4 py-3 text-sm font-semibold text-slate-500 disabled:cursor-not-allowed dark:bg-slate-800 dark:text-slate-400"
-          >
-            Generate AI Summary
-          </button>
-          <p className="mt-3 text-sm leading-6 text-slate-600 dark:text-slate-300">
-            The UI includes the placeholder requested, but no external API call is implemented to keep
-            the application strictly client-side and deployment-safe by default.
-          </p>
         </div>
       </section>
 
@@ -941,8 +1133,15 @@ export default function Home() {
             <div className="mt-6 flex flex-col gap-3 sm:flex-row">
               <button
                 type="button"
+                onClick={() => void saveCurrentSnapshot()}
+                className={`rounded-2xl px-4 py-3 text-sm font-semibold text-white transition ${selectedTheme.accentButton}`}
+              >
+                Save To SQLite
+              </button>
+              <button
+                type="button"
                 onClick={exportSingleSupplier}
-                className="rounded-2xl bg-sky-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-sky-700"
+                className="rounded-2xl border border-slate-300 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
               >
                 Export Current Result As CSV
               </button>
@@ -953,6 +1152,59 @@ export default function Home() {
               >
                 Download Dashboard As PNG
               </button>
+            </div>
+
+            <div className="mt-6 rounded-3xl border border-slate-200 bg-slate-50/80 p-4 dark:border-slate-700 dark:bg-slate-800/40">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-sm font-semibold text-slate-900 dark:text-white">Saved scorecards</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    Stored locally in SQLite for recurring supplier reviews.
+                  </p>
+                </div>
+                <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-slate-600 ring-1 ring-slate-200 dark:bg-slate-900 dark:text-slate-300 dark:ring-slate-700">
+                  {savedSnapshots.length} saved
+                </span>
+              </div>
+              <div className="mt-4 grid gap-3">
+                {savedSnapshots.length ? (
+                  savedSnapshots.slice(0, 6).map((snapshot) => (
+                    <div
+                      key={snapshot.id}
+                      className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-950/70 lg:flex-row lg:items-center lg:justify-between"
+                    >
+                      <div>
+                        <p className="font-semibold text-slate-900 dark:text-white">
+                          {snapshot.supplierName}
+                        </p>
+                        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                          Score {snapshot.compositeScore.toFixed(1)} · {snapshot.ratingLabel} · {formatSnapshotDate(snapshot.createdAt)}
+                        </p>
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => loadSnapshot(snapshot)}
+                          className="rounded-xl border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+                        >
+                          Load
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => void deleteSnapshot(snapshot.id)}
+                          className="rounded-xl border border-rose-300 px-3 py-2 text-xs font-semibold text-rose-700 hover:bg-rose-50"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="rounded-2xl border border-dashed border-slate-300 px-4 py-6 text-sm text-slate-500 dark:border-slate-700 dark:text-slate-400">
+                    No saved scorecards yet. Save the current supplier once the SQLite server is running.
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </section>
