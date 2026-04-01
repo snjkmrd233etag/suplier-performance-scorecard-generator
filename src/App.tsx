@@ -512,6 +512,7 @@ export default function Home() {
   const [sortDirection, setSortDirection] = useState<"desc" | "asc">("desc")
   const [apiKey, setApiKey] = useState("")
   const [selectedThemeId, setSelectedThemeId] = useState("cw-command")
+  const [appearanceMode, setAppearanceMode] = useState<"light" | "dark">("dark")
   const [savedSnapshots, setSavedSnapshots] = useState<SavedSnapshot[]>([])
   const [serverStatus, setServerStatus] = useState<"checking" | "online" | "offline">("checking")
   const [saveMessage, setSaveMessage] = useState("")
@@ -557,6 +558,22 @@ export default function Home() {
     () => themePresets.find((theme) => theme.id === selectedThemeId) ?? themePresets[0],
     [selectedThemeId]
   )
+
+  useEffect(() => {
+    const storedAppearance = window.localStorage.getItem("cw-appearance-mode")
+    if (storedAppearance === "light" || storedAppearance === "dark") {
+      setAppearanceMode(storedAppearance)
+      return
+    }
+
+    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches
+    setAppearanceMode(prefersDark ? "dark" : "light")
+  }, [])
+
+  useEffect(() => {
+    document.documentElement.classList.toggle("dark", appearanceMode === "dark")
+    window.localStorage.setItem("cw-appearance-mode", appearanceMode)
+  }, [appearanceMode])
 
   useEffect(() => {
     async function loadServerData() {
@@ -750,21 +767,68 @@ export default function Home() {
   }
 
   return (
-    <div className="mx-auto max-w-[1440px] space-y-8 px-4 py-8 pb-10 sm:px-6 lg:px-8">
+    <div className="mx-auto max-w-[1440px] space-y-6 px-4 py-5 sm:px-6 lg:px-8">
+      <section className="rounded-[24px] border border-white/60 bg-white/80 px-4 py-3 shadow-lg shadow-slate-200/60 backdrop-blur-xl dark:border-slate-800 dark:bg-slate-900/75 dark:shadow-slate-950/40">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <div className="min-w-0">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-slate-500 dark:text-slate-400">
+              Curtiss-Wright Supplier Intelligence
+            </p>
+            <div className="mt-1 flex flex-wrap items-center gap-2">
+              <h1 className="text-xl font-semibold tracking-tight text-slate-950 dark:text-white">
+                Supplier Performance Scorecard Generator
+              </h1>
+              <span className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-semibold text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
+                Premium review workspace
+              </span>
+            </div>
+          </div>
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="rounded-full border border-slate-200 bg-slate-100 p-1 dark:border-slate-700 dark:bg-slate-800">
+              <button
+                type="button"
+                onClick={() => setAppearanceMode("light")}
+                className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${
+                  appearanceMode === "light"
+                    ? "bg-white text-slate-900 shadow-sm"
+                    : "text-slate-500 dark:text-slate-400"
+                }`}
+              >
+                Light
+              </button>
+              <button
+                type="button"
+                onClick={() => setAppearanceMode("dark")}
+                className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${
+                  appearanceMode === "dark"
+                    ? "bg-slate-950 text-white shadow-sm"
+                    : "text-slate-500 dark:text-slate-400"
+                }`}
+              >
+                Dark
+              </button>
+            </div>
+            <div className="rounded-full border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
+              {selectedTheme.name}
+            </div>
+          </div>
+        </div>
+      </section>
+
       <section
-        className={`overflow-hidden rounded-[28px] border px-6 py-8 text-white shadow-2xl shadow-slate-900/10 sm:px-8 ${selectedTheme.heroRing}`}
+        className={`overflow-hidden rounded-[28px] border px-5 py-6 text-white shadow-2xl shadow-slate-900/10 sm:px-6 ${selectedTheme.heroRing}`}
         style={{ backgroundImage: selectedTheme.heroBackground }}
       >
-        <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-          <div className="max-w-3xl space-y-4">
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+          <div className="max-w-3xl space-y-3">
             <span className="inline-flex items-center rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-sky-100">
               Curtiss-Wright Internal Tool
             </span>
-            <div className="space-y-3">
-              <h1 className="text-4xl font-semibold tracking-tight sm:text-5xl">
+            <div className="space-y-2">
+              <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
                 CW SupplierScore
               </h1>
-              <p className="max-w-2xl text-sm leading-6 text-slate-200 sm:text-base">
+              <p className="max-w-2xl text-sm leading-6 text-slate-200">
                 Weighted supplier performance scoring for defense supply chain teams. Normalize seven
                 operational metrics, apply configurable business weights, and standardize supplier
                 reviews without spreadsheets.
@@ -772,19 +836,19 @@ export default function Home() {
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
-            <div className="rounded-2xl border border-white/10 bg-white/10 p-4 backdrop-blur">
+            <div className="rounded-2xl border border-white/10 bg-white/10 p-3.5 backdrop-blur">
               <p className="text-slate-300">Score Model</p>
               <p className="mt-1 text-lg font-semibold">0-100 Weighted</p>
             </div>
-            <div className="rounded-2xl border border-white/10 bg-white/10 p-4 backdrop-blur">
+            <div className="rounded-2xl border border-white/10 bg-white/10 p-3.5 backdrop-blur">
               <p className="text-slate-300">Mode</p>
               <p className="mt-1 text-lg font-semibold">Single + Batch</p>
             </div>
-            <div className="rounded-2xl border border-white/10 bg-white/10 p-4 backdrop-blur">
+            <div className="rounded-2xl border border-white/10 bg-white/10 p-3.5 backdrop-blur">
               <p className="text-slate-300">Chart</p>
               <p className="mt-1 text-lg font-semibold">Radar Profile</p>
             </div>
-            <div className="rounded-2xl border border-white/10 bg-white/10 p-4 backdrop-blur">
+            <div className="rounded-2xl border border-white/10 bg-white/10 p-3.5 backdrop-blur">
               <p className="text-slate-300">SQLite</p>
               <p className="mt-1 text-lg font-semibold">
                 {serverStatus === "online"
@@ -799,7 +863,7 @@ export default function Home() {
       </section>
 
       <section className="grid gap-4 lg:grid-cols-[1.4fr_1fr]">
-        <div className="rounded-3xl border border-slate-200 bg-white/90 p-6 shadow-sm shadow-slate-200/70 dark:border-slate-800 dark:bg-slate-900/90 dark:shadow-slate-950/30">
+        <div className="premium-card p-5">
           <div className="flex items-start justify-between gap-4">
             <div>
               <p className="text-sm font-semibold uppercase tracking-[0.22em] text-sky-700 dark:text-sky-300">
@@ -813,20 +877,20 @@ export default function Home() {
               Recalculates instantly on every change
             </div>
           </div>
-          <div className="mt-6 grid gap-4 md:grid-cols-3">
-            <div className="rounded-2xl bg-slate-50 p-4 dark:bg-slate-800/60">
+          <div className="mt-4 grid gap-3 md:grid-cols-3">
+            <div className="rounded-2xl bg-slate-50 p-3.5 dark:bg-slate-800/60">
               <p className="text-sm font-semibold text-slate-900 dark:text-white">1. Enter metrics</p>
               <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">
                 Update the seven supplier inputs for a single supplier review.
               </p>
             </div>
-            <div className="rounded-2xl bg-slate-50 p-4 dark:bg-slate-800/60">
+            <div className="rounded-2xl bg-slate-50 p-3.5 dark:bg-slate-800/60">
               <p className="text-sm font-semibold text-slate-900 dark:text-white">2. Tune weights</p>
               <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">
                 Business weights auto-balance to remain exactly 100%.
               </p>
             </div>
-            <div className="rounded-2xl bg-slate-50 p-4 dark:bg-slate-800/60">
+            <div className="rounded-2xl bg-slate-50 p-3.5 dark:bg-slate-800/60">
               <p className="text-sm font-semibold text-slate-900 dark:text-white">3. Share results</p>
               <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">
                 Review the scorecard, process a batch CSV, or export the dashboard.
@@ -835,27 +899,27 @@ export default function Home() {
           </div>
         </div>
 
-        <div className="rounded-3xl border border-slate-200 bg-white/90 p-6 shadow-sm shadow-slate-200/70 dark:border-slate-800 dark:bg-slate-900/90 dark:shadow-slate-950/30">
+        <div className="premium-card p-5">
           <p className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-500 dark:text-slate-400">
             Themes And Local Save
           </p>
           <h2 className="mt-2 text-2xl font-semibold text-slate-950 dark:text-white">
             Presentation presets
           </h2>
-          <div className="mt-5 space-y-3">
+          <div className="mt-4 space-y-2.5">
             {themePresets.map((theme) => (
               <button
                 key={theme.id}
                 type="button"
                 onClick={() => void selectTheme(theme.id)}
-                className={`w-full rounded-2xl border p-4 text-left transition ${
+                  className={`w-full rounded-2xl border p-3.5 text-left transition ${
                   selectedThemeId === theme.id
                     ? "border-slate-900 bg-slate-950 text-white"
                     : "border-slate-200 bg-slate-50 text-slate-900 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800/60 dark:text-white"
                 }`}
               >
                 <div
-                  className="mb-3 h-12 rounded-xl"
+                  className="mb-2.5 h-11 rounded-xl"
                   style={{ backgroundImage: theme.heroBackground }}
                 />
                 <p className="text-sm font-semibold">{theme.name}</p>
@@ -863,7 +927,7 @@ export default function Home() {
               </button>
             ))}
           </div>
-          <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-800/50">
+          <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-3.5 dark:border-slate-700 dark:bg-slate-800/50">
             <p className="text-sm font-semibold text-slate-900 dark:text-white">Local SQLite server</p>
             <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">
               Status: <span className="font-semibold">{serverStatus}</span>. Run <code>npm run dev:full</code> for the Vite app and SQLite API together.
@@ -887,7 +951,7 @@ export default function Home() {
 
       <div className="grid gap-8 xl:grid-cols-[1.1fr_0.9fr]">
         <section className="space-y-6">
-          <div className="rounded-3xl border border-slate-200 bg-white/90 p-6 shadow-sm shadow-slate-200/70 dark:border-slate-800 dark:bg-slate-900/90 dark:shadow-slate-950/30">
+          <div className="premium-card p-5">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
               <div>
                 <p className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-500 dark:text-slate-400">
@@ -903,7 +967,7 @@ export default function Home() {
               </div>
             </div>
 
-            <div className="mt-6 grid gap-5 sm:grid-cols-2">
+            <div className="mt-4 grid gap-4 sm:grid-cols-2">
               <label className="sm:col-span-2">
                 <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
                   Supplier Name
@@ -948,7 +1012,7 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="rounded-3xl border border-slate-200 bg-white/90 p-6 shadow-sm shadow-slate-200/70 dark:border-slate-800 dark:bg-slate-900/90 dark:shadow-slate-950/30">
+          <div className="premium-card p-5">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <p className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-500 dark:text-slate-400">
@@ -969,9 +1033,9 @@ export default function Home() {
               </div>
             </div>
 
-            <div className="mt-6 space-y-5">
+            <div className="mt-4 space-y-3.5">
               {metricDefinitions.map((metric) => (
-                <div key={metric.key} className="rounded-2xl bg-slate-50 p-4 dark:bg-slate-800/60">
+                <div key={metric.key} className="rounded-2xl bg-slate-50 p-3.5 dark:bg-slate-800/60">
                   <div className="flex flex-col gap-3 md:flex-row md:items-center">
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
@@ -1030,8 +1094,8 @@ export default function Home() {
           </div>
         </section>
 
-        <section ref={dashboardRef} className="space-y-6">
-          <div className="rounded-3xl border border-slate-200 bg-white/90 p-6 shadow-sm shadow-slate-200/70 dark:border-slate-800 dark:bg-slate-900/90 dark:shadow-slate-950/30">
+        <section ref={dashboardRef} className="space-y-5">
+          <div className="premium-card p-5">
             <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
               <div className="space-y-3">
                 <p className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-500 dark:text-slate-400">
@@ -1051,8 +1115,8 @@ export default function Home() {
               </div>
             </div>
 
-            <div className="mt-6 grid gap-4 md:grid-cols-3">
-              <div className="rounded-2xl bg-slate-50 p-4 dark:bg-slate-800/60">
+            <div className="mt-4 grid gap-3 md:grid-cols-3">
+              <div className="rounded-2xl bg-slate-50 p-3.5 dark:bg-slate-800/60">
                 <p className="text-sm text-slate-500 dark:text-slate-400">Lowest normalized metric</p>
                 <p className="mt-2 text-lg font-semibold text-slate-950 dark:text-white">
                   {improvementMetric.label}
@@ -1061,7 +1125,7 @@ export default function Home() {
                   {normalizedScores[improvementMetric.key].toFixed(1)} / 100
                 </p>
               </div>
-              <div className="rounded-2xl bg-slate-50 p-4 dark:bg-slate-800/60">
+              <div className="rounded-2xl bg-slate-50 p-3.5 dark:bg-slate-800/60">
                 <p className="text-sm text-slate-500 dark:text-slate-400">Highest weight</p>
                 <p className="mt-2 text-lg font-semibold text-slate-950 dark:text-white">
                   {
@@ -1081,7 +1145,7 @@ export default function Home() {
                   %
                 </p>
               </div>
-              <div className="rounded-2xl bg-slate-50 p-4 dark:bg-slate-800/60">
+              <div className="rounded-2xl bg-slate-50 p-3.5 dark:bg-slate-800/60">
                 <p className="text-sm text-slate-500 dark:text-slate-400">Biggest improvement opportunity</p>
                 <p className="mt-2 text-lg font-semibold text-slate-950 dark:text-white">
                   Focus on {improvementMetric.shortLabel}
@@ -1210,7 +1274,7 @@ export default function Home() {
         </section>
       </div>
 
-      <section className="rounded-3xl border border-slate-200 bg-white/90 p-6 shadow-sm shadow-slate-200/70 dark:border-slate-800 dark:bg-slate-900/90 dark:shadow-slate-950/30">
+      <section className="premium-card p-5">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-500 dark:text-slate-400">
@@ -1234,7 +1298,7 @@ export default function Home() {
           </button>
         </div>
 
-        <div className="mt-6 grid gap-6 xl:grid-cols-[1fr_1.2fr]">
+        <div className="mt-4 grid gap-5 xl:grid-cols-[1fr_1.2fr]">
           <div>
             <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
               CSV Input
